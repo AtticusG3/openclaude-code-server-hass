@@ -145,28 +145,28 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-        ack=3.8.1-1 \
-        colordiff=1.0.21-1 \
-        git=1:2.47.3-0+deb13u1 \
-        iputils-ping=3:20240905-3 \
-        locales=2.41-12 \
-        mariadb-client=1:11.8.3-0+deb13u1 \
-        mosquitto-clients=2.0.21-1 \
-        net-tools=2.10-1.3 \
-        nmap=7.95+dfsg-3 \
-        openssh-client=1:10.0p1-7 \
-        openssl=3.5.4-1~deb13u1 \
-        python3-venv=3.13.5-1 \
-        python3=3.13.5-1 \
-        unzip=6.0-29 \
-        wget=1.25.0-2 \
-        zip=3.0-15 \
-        zsh=5.9-8+b14 \
-        less=668-1 \
+        ack \
+        colordiff \
+        git \
+        iputils-ping \
+        locales \
+        mariadb-client \
+        mosquitto-clients \
+        net-tools \
+        nmap \
+        openssh-client \
+        openssl \
+        python3-venv \
+        python3 \
+        unzip \
+        wget \
+        zip \
+        zsh \
+        less \
     ; \
     apt-get install -y --no-install-recommends \
         bat \
-        build-essential=12.12 \
+        build-essential \
         ca-certificates \
         clang \
         cmake \
