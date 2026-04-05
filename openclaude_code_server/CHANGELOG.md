@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - (none)
 
+## [1.0.4] - 2026-04-05
+
+### Fixed
+
+- Install .NET SDK with **`dotnet-install.sh`** instead of the **packages.microsoft.com** apt repository. On Debian Trixie, **apt/sqv** rejects that repo signature (SHA1 policy effective 2026-02-01), which broke image builds.
+
 ## [1.0.3] - 2026-04-05
 
 ### Fixed
@@ -42,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenClaude CLI installed globally at image build (`@gitlawb/openclaude`); Node.js LTS from official tarball; Bun from official release archives.
 - Build-time tooling: `pnpm` (npm global), `yarn` via Debian `yarnpkg` with `yarn` symlink, `uv` (pipx global), Hugging Face Hub CLI (`huggingface_hub[cli]`), ESPHome and yamllint (pip), ripgrep, git, git-lfs, GitHub CLI (`gh`), tig, jq, fd-find, fzf, bat, direnv, just, rsync, zip/unzip, xz-utils.
 - Database and network clients: `mariadb-client`, `mosquitto-clients`, `nmap`.
-- .NET SDK 8.0 via Microsoft Debian package feed (`DOTNET_DEBIAN_MS_MAJOR` default 12).
+- .NET SDK 8.0 via Microsoft Debian package feed (`dotnet-sdk-8.0`); **v1.0.4** switched to **`dotnet-install.sh`** because Trixie **apt/sqv** rejects that repo signature.
 - Native/C toolchain retained at runtime: `build-essential`, `cmake`, `clang`, `pkg-config` (not purged after builds).
 - VS Code extensions baked at build (Home Assistant, ESPHome, YAML, Prettier, Error Lens, etc.).
 - s6-overlay services: `init-user` (no runtime `apt`), `init-openclaude` (persistent `~/.claude`, shell env from options), `init-code-server`, `code-server` longrun.
@@ -53,7 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - API keys are not baked into the image; optional keys are written to `/etc/profile.d/99-openclaude-hass.sh` with mode 600 (single-user root container).
 
-[Unreleased]: https://github.com/LOCAL/openclaude-code-server-hass/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/LOCAL/openclaude-code-server-hass/compare/v1.0.4...HEAD
+[1.0.4]: https://github.com/LOCAL/openclaude-code-server-hass/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/LOCAL/openclaude-code-server-hass/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/LOCAL/openclaude-code-server-hass/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/LOCAL/openclaude-code-server-hass/compare/v1.0.0...v1.0.1

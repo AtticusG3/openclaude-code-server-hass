@@ -122,6 +122,7 @@ ENV \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8 \
     PIP_BREAK_SYSTEM_PACKAGES=1 \
+    DOTNET_ROOT=/usr/share/dotnet \
     PATH="/opt/addon-venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -135,10 +136,11 @@ COPY --from=assets /artifacts/ha /usr/bin/ha
 COPY --from=assets /artifacts/extensions/ /usr/local/lib/code-server/lib/vscode/extensions/
 
 ARG BUILD_ARCH=amd64
-ARG DOTNET_DEBIAN_MS_MAJOR="12"
+ARG DOTNET_CHANNEL="8.0"
 ARG UV_VERSION="0.6.14"
 ARG FALLOW_SKILLS_REF="v1.0.0"
-# Microsoft packages feed: use 12 (bookworm) repo on Debian 13+ bases when 13 is unavailable.
+# .NET SDK: install via dotnet-install.sh. The packages.microsoft.com apt repo fails on Debian
+# Trixie because apt/sqv rejects the Microsoft signing key (SHA1 policy from 2026-02-01).
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
@@ -186,11 +188,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         xz-utils \
         yarnpkg \
     ; \
-    curl -fsSL -o /tmp/packages-microsoft-prod.deb \
-        "https://packages.microsoft.com/config/debian/${DOTNET_DEBIAN_MS_MAJOR}/packages-microsoft-prod.deb"; \
-    dpkg -i /tmp/packages-microsoft-prod.deb; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends dotnet-sdk-8.0; \
+    curl -fsSL -o /tmp/dotnet-install.sh https://dot.net/v1/dotnet-install.sh; \
+    chmod +x /tmp/dotnet-install.sh; \
+    /tmp/dotnet-install.sh --channel "${DOTNET_CHANNEL}" --install-dir /usr/share/dotnet; \
+    ln -sf /usr/share/dotnet/dotnet /usr/local/bin/dotnet; \
+    dotnet --info; \
     sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen; \
     locale-gen; \
     ln -sf /usr/local/lib/code-server/bin/code-server /usr/local/bin/code-server; \

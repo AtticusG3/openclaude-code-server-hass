@@ -29,7 +29,7 @@ README.md
 - **Fallow** JS/TS codebase analyzer CLI: npm package [`fallow`](https://www.npmjs.com/package/fallow) from [fallow-rs/fallow](https://github.com/fallow-rs/fallow) (pinned `FALLOW_NPM_VERSION`; Rust native binary via npm optional deps)
 - **Fallow agent skills (reference):** shallow clone of [fallow-rs/fallow-skills](https://github.com/fallow-rs/fallow-skills) at tag `FALLOW_SKILLS_REF` into **`/usr/local/share/fallow-skills`**. This add-on runs **code-server** (VS Code in the browser), not Cursor; the skills tree is bundled for reading, copying, or use with any tool that understands the [Agent Skills](https://github.com/fallow-rs/fallow-skills) layout. code-server does not auto-load that directory.
 - **JS:** `pnpm` (global npm); **`yarn`** via Debian **`yarnpkg`** with `/usr/local/bin/yarn` symlink (npm global `yarn` removed to avoid duplicates); **Bun** (pinned `BUN_VERSION`, official release zip)
-- **.NET:** **SDK 8.0** (`dotnet-sdk-8.0`) from the [Microsoft Debian feed](https://learn.microsoft.com/en-us/dotnet/core/install/linux-debian); repo major is `DOTNET_DEBIAN_MS_MAJOR` (default `12` when the host is Debian 13-class and Microsoft has no `13` feed yet)
+- **.NET:** **SDK 8.0** installed with Microsoft’s official [**dotnet-install.sh**](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script) (channel `DOTNET_CHANNEL`, default `8.0`) into **`/usr/share/dotnet`**. This avoids the **packages.microsoft.com** apt repository, which fails OpenPGP verification on Debian Trixie (strict **sqv** / SHA1 policy).
 - **C / native toolchain:** **`build-essential`** (gcc, libc dev, **make**, **g++**) is **kept after build** (not purged) so you can compile in the container; also **`cmake`**, **`clang`**, **`pkg-config`**
 - **Python:** `python3`, `python3-venv` (system); **`pipx`** (apt) for extra tools under `/data/openclaude/pipx`; **`esphome` / `yamllint` / `huggingface_hub[cli]`** in **`/opt/addon-venv`** (prepended to `PATH`); no `python3-pip` or `get-pip.py` on the runtime image
 - **`uv` / `uvx`:** pinned standalone binaries from [astral-sh/uv releases](https://github.com/astral-sh/uv/releases) (`UV_VERSION` in `Dockerfile`); not installed via `pipx` anymore
@@ -45,7 +45,7 @@ This add-on does **not** use Supervisor **`packages:`** at runtime; the list abo
 | yarn | `apt` **`yarnpkg`** + **`yarn`** symlink |
 | pnpm | `npm install -g pnpm` at build |
 | python3, python3-venv, pipx | `apt` + `pipx` (project CLIs live in `/opt/addon-venv`) |
-| dotnet-sdk-8.0 | Microsoft `packages-microsoft-prod` + **`dotnet-sdk-8.0`** |
+| dotnet SDK 8.0 | **`dotnet-install.sh`** into `/usr/share/dotnet` + `dotnet` symlink |
 | build-essential, make, g++ | **`build-essential`** kept; not purged after npm native builds |
 | pkg-config, cmake, clang | `apt` **`pkg-config`**, **`cmake`**, **`clang`** |
 | direnv, just | `apt` |
@@ -103,7 +103,7 @@ OpenClaude reads `CLAUDE_CODE_USE_OPENAI=1` plus `OPENAI_BASE_URL`, `OPENAI_API_
 
 ## Updating OpenClaude or code-server
 
-Bump `OPENCLAUDE_NPM_VERSION`, `FALLOW_NPM_VERSION`, `PI_CODING_AGENT_NPM_VERSION`, `FALLOW_SKILLS_REF`, `CODE_SERVER_VERSION`, `NODE_VERSION`, `BUN_VERSION`, or `UV_VERSION` in `Dockerfile`, then rebuild the add-on image (Supervisor **Rebuild** or CI). Bump `requirements.txt` for ESPHome, Hugging Face Hub CLI, or yamllint. No runtime installer is involved.
+Bump `OPENCLAUDE_NPM_VERSION`, `FALLOW_NPM_VERSION`, `PI_CODING_AGENT_NPM_VERSION`, `FALLOW_SKILLS_REF`, `CODE_SERVER_VERSION`, `NODE_VERSION`, `BUN_VERSION`, `UV_VERSION`, or `DOTNET_CHANNEL` in `Dockerfile`, then rebuild the add-on image (Supervisor **Rebuild** or CI). Bump `requirements.txt` for ESPHome, Hugging Face Hub CLI, or yamllint. No runtime installer is involved.
 
 **Docs (not cloned into the image):** [fallow-rs/docs](https://github.com/fallow-rs/docs) / [docs.fallow.tools](https://docs.fallow.tools).
 
@@ -116,7 +116,7 @@ Bump `OPENCLAUDE_NPM_VERSION`, `FALLOW_NPM_VERSION`, `PI_CODING_AGENT_NPM_VERSIO
 | Pi coding agent | `0.65.0` | `Dockerfile` `PI_CODING_AGENT_NPM_VERSION` |
 | fallow-skills (git tag) | `v1.0.0` | `Dockerfile` `FALLOW_SKILLS_REF` |
 | uv (standalone) | `0.6.14` | `Dockerfile` `UV_VERSION` |
-| .NET SDK | `8.0` (package `dotnet-sdk-8.0`) | Microsoft Debian feed; `Dockerfile` `DOTNET_DEBIAN_MS_MAJOR` |
+| .NET SDK | `8.0` (install script channel) | `Dockerfile` `DOTNET_CHANNEL`; **`dotnet-install.sh`** |
 | ESPHome (pip) | `2025.12.3` | `requirements.txt` |
 | huggingface_hub (CLI) | `0.28.1` | `requirements.txt` |
 | yamllint | `1.37.1` | `requirements.txt` |

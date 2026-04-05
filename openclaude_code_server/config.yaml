@@ -1,6 +1,6 @@
 ---
 name: OpenClaude Code Server
-version: 1.0.3
+version: 1.0.4
 slug: openclaude_code_server
 description: >-
   Browser-based VS Code (code-server) with OpenClaude and dev tooling baked in at
