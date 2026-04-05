@@ -9,7 +9,11 @@ Thumbs.db
 venv/
 .idea/
 .vscode/
-.cursor/
+# Cursor IDE: ignore local state, but keep project hook definitions versioned
+.cursor/*
+!.cursor/hooks-cursor.json
+!.cursor/hooks/
+.cursor/hooks/state/
 .history/
 *.code-workspace
 node_modules/

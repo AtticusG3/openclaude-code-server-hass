@@ -232,11 +232,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         \( \( -type d -a \( -name test -o -name tests -o -name '__pycache__' \) \) \
         -o \( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \) \
         -exec rm -rf '{}' +; \
-    rm -fr \
-        /root/.cache \
-        /tmp/* \
-        /var/{cache,log}/* \
-        /var/lib/apt/lists/*
+    rm -fr /root/.cache /tmp/*; \
+    find /var/cache -mindepth 1 -maxdepth 1 ! -name apt -exec rm -rf {} +; \
+    find /var/cache/apt -mindepth 1 -delete 2>/dev/null || true; \
+    rm -fr /var/log/*; \
+    rm -rf /var/lib/apt/lists/*
 
 COPY vscode.extensions /root/vscode.extensions
 

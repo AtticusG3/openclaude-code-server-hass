@@ -2,13 +2,17 @@
 
 Custom [Home Assistant](https://www.home-assistant.io/) add-on derived from the [Studio Code Server](https://github.com/hassio-addons/addon-vscode) layout ([code-server](https://github.com/coder/code-server) in the browser). Tooling and [OpenClaude](https://github.com/Gitlawb/openclaude) are installed **at image build time** so the container does not run `apt`, `npm install`, or `pip install` on every start.
 
+**Repository:** [github.com/AtticusG3/openclaude-code-server-hass](https://github.com/AtticusG3/openclaude-code-server-hass)  
+**In-app docs:** [openclaude_code_server/DOCS.md](openclaude_code_server/DOCS.md) (also linked from the add-on page when the store points at this repo)
+
 ## Repository layout
 
 ```text
-repository.yaml                 # Local add-on repository manifest (update URL)
+repository.yaml                 # Add-on store manifest (Git URL shown in HA)
+.github/workflows/ci.yml        # Validates repository.yaml, config.yaml, build.yaml (PyYAML)
 openclaude_code_server/
-  config.yaml                   # Add-on metadata, maps, options schema
-  build.yaml                    # hassio-addons/debian-base per arch
+  config.yaml                   # Add-on metadata, Supervisor maps, options schema
+  build.yaml                    # hassio-addons/debian-base image per arch (pinned)
   Dockerfile                    # Multi-stage: py-builder + assets + hassio-base runtime
   CHANGELOG.md                  # Release history (HA app layout; shown in add-on UI when present)
   requirements.txt              # Python wheels baked in (esphome, yamllint, huggingface_hub CLI)
@@ -18,7 +22,23 @@ openclaude_code_server/
 README.md
 ```
 
-**Assumption:** Supervisor expects this repository as a **custom add-on store**: add it under **Settings > Add-ons > Add-on store > Repositories**, then install **OpenClaude Code Server**.
+**Install:** Add this repository under **Settings > Add-ons > Add-on store > Repositories** using the URL from `repository.yaml`, then install **OpenClaude Code Server**. The add-on version in the UI comes from `openclaude_code_server/config.yaml` (`version:`).
+
+## Supervisor integration (from `config.yaml`)
+
+The add-on declares **ingress** on port **1337** with **ingress_stream** enabled, **Home Assistant API** and **Supervisor API** access (`hassio_role: manager`), **UART** for serial workflows, and volume **maps** into the container (container paths follow [Home Assistant add-on `map` conventions](https://developers.home-assistant.io/docs/add-ons/configuration)):
+
+| Map type | Container path | Typical use |
+|----------|----------------|-------------|
+| `addons` | `/addons` | Other add-on data |
+| `all_addon_configs` | `/addon_configs` | Config folders for all add-ons (see HA docs for layout) |
+| `backup` | `/backup` | Backups |
+| `homeassistant_config` | `/config` | Live Home Assistant Core configuration |
+| `media` | `/media` | Media library |
+| `share` | `/share` | Host **Share** (default git/workspace lives under here) |
+| `ssl` | `/ssl` | TLS material |
+
+Add-on data (`/data`) is always available separately; host-side paths are defined by your Supervisor installation.
 
 ## What is baked into the image (build time)
 
@@ -29,7 +49,7 @@ README.md
 - **Fallow** JS/TS codebase analyzer CLI: npm package [`fallow`](https://www.npmjs.com/package/fallow) from [fallow-rs/fallow](https://github.com/fallow-rs/fallow) (pinned `FALLOW_NPM_VERSION`; Rust native binary via npm optional deps)
 - **Fallow agent skills (reference):** shallow clone of [fallow-rs/fallow-skills](https://github.com/fallow-rs/fallow-skills) at tag `FALLOW_SKILLS_REF` into **`/usr/local/share/fallow-skills`**. This add-on runs **code-server** (VS Code in the browser), not Cursor; the skills tree is bundled for reading, copying, or use with any tool that understands the [Agent Skills](https://github.com/fallow-rs/fallow-skills) layout. code-server does not auto-load that directory.
 - **JS:** `pnpm` (global npm); **`yarn`** via Debian **`yarnpkg`** with `/usr/local/bin/yarn` symlink (npm global `yarn` removed to avoid duplicates); **Bun** (pinned `BUN_VERSION`, official release zip)
-- **.NET:** **SDK 8.0** installed with Microsoft’s official [**dotnet-install.sh**](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script) (channel `DOTNET_CHANNEL`, default `8.0`) into **`/usr/share/dotnet`**. This avoids the **packages.microsoft.com** apt repository, which fails OpenPGP verification on Debian Trixie (strict **sqv** / SHA1 policy).
+- **.NET:** **SDK 8.0** installed with Microsoft's official [**dotnet-install.sh**](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script) (channel `DOTNET_CHANNEL`, default `8.0`) into **`/usr/share/dotnet`**. This avoids the **packages.microsoft.com** apt repository, which fails OpenPGP verification on Debian Trixie (strict **sqv** / SHA1 policy).
 - **C / native toolchain:** **`build-essential`** (gcc, libc dev, **make**, **g++**) is **kept after build** (not purged) so you can compile in the container; also **`cmake`**, **`clang`**, **`pkg-config`**
 - **Python:** `python3`, `python3-venv` (system); **`pipx`** (apt) for extra tools under `/data/openclaude/pipx`; **`esphome` / `yamllint` / `huggingface_hub[cli]`** in **`/opt/addon-venv`** (prepended to `PATH`); no `python3-pip` or `get-pip.py` on the runtime image
 - **`uv` / `uvx`:** pinned standalone binaries from [astral-sh/uv releases](https://github.com/astral-sh/uv/releases) (`UV_VERSION` in `Dockerfile`); not installed via `pipx` anymore
@@ -55,6 +75,8 @@ This add-on does **not** use Supervisor **`packages:`** at runtime; the list abo
 - **Oh My Zsh** + autosuggestions + syntax highlighting (cloned at build)
 
 **Not** baked: API keys, provider secrets, or machine-specific URLs (those come from add-on options at runtime).
+
+**Runtime base image:** `ghcr.io/hassio-addons/debian-base:9.1.0` per arch (`build.yaml`).
 
 ## What persists across restarts
 
@@ -82,12 +104,13 @@ This add-on does **not** use Supervisor **`packages:`** at runtime; the list abo
 
 | Option | Meaning |
 |--------|---------|
+| `log_level` | Supervisor add-on log level: `trace`, `debug`, `info`, `notice`, `warning`, `error`, or `fatal` (default `info`) |
 | `workspace_mode` | `share_openclaude` (default), `homeassistant_config`, or `addon_data` |
 | `config_path` | Optional absolute path override (takes precedence over `workspace_mode`) |
 | `default_provider` | `ollama` or `openrouter` |
 | `ollama_base_url` | OpenAI-compatible base URL (default `http://127.0.0.1:11434/v1`) |
 | `openrouter_base_url` | Default `https://openrouter.ai/api/v1` |
-| `openai_model` | Model id passed as `OPENAI_MODEL` |
+| `openai_model` | Model id passed as `OPENAI_MODEL` (default in schema: `qwen2.5-coder:7b`; set to a model your provider accepts) |
 | `openrouter_api_key` | Stored in Supervisor options; written to root-only profile snippet (see security note) |
 | `ollama_api_key` | Optional; some proxies require a placeholder key |
 | `git_user_name` / `git_user_email` | Seeded into `/data/git/.gitconfig` **only if `user.name` is empty** |
@@ -109,8 +132,15 @@ Bump `OPENCLAUDE_NPM_VERSION`, `FALLOW_NPM_VERSION`, `PI_CODING_AGENT_NPM_VERSIO
 
 ## Version pins (high level)
 
+Values below match the `Dockerfile` / `requirements.txt` / `build.yaml` in this tree; rebuild after edits.
+
 | Component | Default pin | Where |
 |-----------|-------------|--------|
+| code-server | `v4.107.0` | `Dockerfile` `CODE_SERVER_VERSION` |
+| Node.js | `22.14.0` | `Dockerfile` `NODE_VERSION` |
+| OpenClaude (npm) | `0.1.7` | `Dockerfile` `OPENCLAUDE_NPM_VERSION` |
+| Home Assistant CLI (`ha`) | `4.45.0` | `Dockerfile` `HA_CLI_VERSION` |
+| Debian base (runtime) | `9.1.0` | `build.yaml` `ghcr.io/hassio-addons/debian-base` |
 | Bun | `1.2.6` | `Dockerfile` `BUN_VERSION` |
 | Fallow (npm CLI) | `2.13.0` | `Dockerfile` `FALLOW_NPM_VERSION` |
 | Pi coding agent | `0.65.0` | `Dockerfile` `PI_CODING_AGENT_NPM_VERSION` |
@@ -125,14 +155,15 @@ Bump `OPENCLAUDE_NPM_VERSION`, `FALLOW_NPM_VERSION`, `PI_CODING_AGENT_NPM_VERSIO
 
 ## Local checks (test plan)
 
-1. **Build (BuildKit recommended for apt/npm cache mounts):** from repo root, `DOCKER_BUILDKIT=1 docker build --build-arg BUILD_ARCH=amd64 -t occs:test openclaude_code_server`. Compare image size: `docker image ls occs:test` (or `docker inspect occs:test --format '{{.Size}}'`). Compare build time: use `Measure-Command { ... }` (PowerShell) or `/usr/bin/time` on Unix with warm vs cold cache.
-2. **Install:** Add custom repo, install add-on, confirm ingress opens code-server.
-3. **Tools:** In integrated terminal: `node -v`, `npm -v`, `pnpm -v`, `yarn --version`, `bun --version`, `dotnet --version`, `gcc --version`, `cmake --version`, `clang --version`, `pkg-config --version`, `rg --version`, `git --version`, `git lfs version`, `gh --version`, `tig --version`, `uv --version`, `which python3`, `which pip` (expect `/opt/addon-venv/bin/pip` when the venv is first on `PATH`), `fd --version`, `just --version`, `fzf --version`, `bat --version`, `hf --version` (or `huggingface-cli --version`), `command -v openclaude`, `fallow --version`, `pi --version`, `test -d /usr/local/share/fallow-skills`, `mysql --version`, `nmap --version`, `mosquitto_pub -h` (prints help).
-4. **OpenClaude:** Run `openclaude` (or follow OpenClaude docs for non-interactive checks).
-5. **Pi / Fallow:** From a JS/TS repo workspace, run `fallow` or `fallow dead-code`; run `pi` per [pi-mono](https://github.com/badlogic/pi-mono) coding-agent docs (needs your LLM keys in the environment).
-6. **Persistence:** Create a file under `/share/openclaude_workspace`, restart add-on, confirm file remains.
-7. **Ollama:** Set `default_provider: ollama`, set `ollama_base_url` to reachable host IP, run OpenClaude against a remote Ollama.
-8. **OpenRouter:** Set `default_provider: openrouter`, fill `openrouter_api_key`, confirm requests succeed.
+1. **CI:** On push/PR to `main`, GitHub Actions parses `repository.yaml`, `openclaude_code_server/config.yaml`, and `openclaude_code_server/build.yaml` with PyYAML (see `.github/workflows/ci.yml`).
+2. **Build (BuildKit recommended for apt/npm cache mounts):** from repo root, `DOCKER_BUILDKIT=1 docker build --build-arg BUILD_ARCH=amd64 -t occs:test openclaude_code_server`. Compare image size: `docker image ls occs:test` (or `docker inspect occs:test --format '{{.Size}}'`). Compare build time: use `Measure-Command { ... }` (PowerShell) or `/usr/bin/time` on Unix with warm vs cold cache.
+3. **Install:** Add custom repo, install add-on, confirm ingress opens code-server.
+4. **Tools:** In integrated terminal: `node -v`, `npm -v`, `pnpm -v`, `yarn --version`, `bun --version`, `dotnet --version`, `gcc --version`, `cmake --version`, `clang --version`, `pkg-config --version`, `rg --version`, `git --version`, `git lfs version`, `gh --version`, `tig --version`, `uv --version`, `which python3`, `which pip` (expect `/opt/addon-venv/bin/pip` when the venv is first on `PATH`), `fd --version`, `just --version`, `fzf --version`, `bat --version`, `hf --version` (or `huggingface-cli --version`), `command -v openclaude`, `fallow --version`, `pi --version`, `test -d /usr/local/share/fallow-skills`, `mysql --version`, `nmap --version`, `mosquitto_pub -h` (prints help).
+5. **OpenClaude:** Run `openclaude` (or follow OpenClaude docs for non-interactive checks).
+6. **Pi / Fallow:** From a JS/TS repo workspace, run `fallow` or `fallow dead-code`; run `pi` per [pi-mono](https://github.com/badlogic/pi-mono) coding-agent docs (needs your LLM keys in the environment).
+7. **Persistence:** Create a file under `/share/openclaude_workspace`, restart add-on, confirm file remains.
+8. **Ollama:** Set `default_provider: ollama`, set `ollama_base_url` to reachable host IP, run OpenClaude against a remote Ollama.
+9. **OpenRouter:** Set `default_provider: openrouter`, fill `openrouter_api_key`, confirm requests succeed.
 
 ## Line endings and executable bits
 
@@ -146,6 +177,7 @@ On Linux/macOS builds this matters for the container entrypoint.
 
 ## References
 
+- [AtticusG3/openclaude-code-server-hass](https://github.com/AtticusG3/openclaude-code-server-hass) (this add-on)
 - [hassio-addons/addon-vscode](https://github.com/hassio-addons/addon-vscode)
 - [hassio-addons/debian-base](https://github.com/hassio-addons/addon-debian-base) (via `ghcr.io/hassio-addons/debian-base`)
 - [Gitlawb/openclaude](https://github.com/Gitlawb/openclaude)

@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - (none)
 
+## [1.0.5] - 2026-04-05
+
+### Fixed
+
+- Docker **BuildKit** apt cache mounts: final cleanup no longer runs **`rm -fr`** on **`/var/cache/apt`** (bind-mounted cache), which failed with **Device or resource busy** and broke the image build.
+
 ## [1.0.4] - 2026-04-05
 
 ### Fixed
@@ -59,7 +65,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - API keys are not baked into the image; optional keys are written to `/etc/profile.d/99-openclaude-hass.sh` with mode 600 (single-user root container).
 
-[Unreleased]: https://github.com/LOCAL/openclaude-code-server-hass/compare/v1.0.4...HEAD
+[Unreleased]: https://github.com/LOCAL/openclaude-code-server-hass/compare/v1.0.5...HEAD
+[1.0.5]: https://github.com/LOCAL/openclaude-code-server-hass/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/LOCAL/openclaude-code-server-hass/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/LOCAL/openclaude-code-server-hass/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/LOCAL/openclaude-code-server-hass/compare/v1.0.1...v1.0.2
