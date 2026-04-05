@@ -1,0 +1,15 @@
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.bak
+.env
+.env.*
+.venv/
+venv/
+.idea/
+.vscode/
+.cursor/
+.history/
+*.code-workspace
+node_modules/

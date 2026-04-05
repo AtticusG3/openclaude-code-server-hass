@@ -1,0 +1,49 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# OpenClaude Code Server add-on: code-server data dirs and default settings.
+# ==============================================================================
+declare config_path
+
+resolve_workspace_path() {
+    if bashio::config.has_value 'config_path'; then
+        bashio::config 'config_path'
+        return
+    fi
+    case "$(bashio::config 'workspace_mode')" in
+        homeassistant_config) echo '/config' ;;
+        addon_data) echo '/data/workspace' ;;
+        *) echo '/share/openclaude_workspace' ;;
+    esac
+}
+
+config_path=$(resolve_workspace_path)
+
+if ! bashio::fs.directory_exists "${config_path}"; then
+    bashio::exit.nok "Workspace path does not exist: ${config_path}"
+fi
+
+if [[ "${config_path}" == "/" ]]; then
+    bashio::exit.nok \
+        "Using the root directory (/) as workspace is not allowed."
+fi
+
+if ! bashio::fs.directory_exists '/data/vscode'; then
+    mkdir -p /data/vscode/extensions \
+        || bashio::exit.nok "Could not create persistent storage folder."
+fi
+
+while read -r ext; do
+    extension="${ext%%#*}"
+    # shellcheck disable=SC2086
+    rm -f -r /data/vscode/extensions/${extension,,}*
+done < /root/vscode.extensions
+
+mkdir -p /data/vscode/extensions
+
+if ! bashio::fs.file_exists '/data/vscode/User/settings.json'; then
+    mkdir -p /data/vscode/User \
+        || bashio::exit.nok "Could not create persistent storage folder."
+
+    cp /root/.code-server/settings.json /data/vscode/User/settings.json
+fi

@@ -1,0 +1,12 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# OpenClaude Code Server add-on: halt container when code-server stops unexpectedly
+# ==============================================================================
+if [[ "${1}" -eq 256 ]]; then
+    exit 0
+fi
+
+bashio::log.warning "code-server exited with code ${1}; stopping container."
+echo "${1}" >/run/s6-linux-init-container-results/exitcode 2>/dev/null || true
+exec /run/s6/basedir/bin/halt

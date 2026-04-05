@@ -1,0 +1,37 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# OpenClaude Code Server add-on: run code-server
+# ==============================================================================
+declare -a options
+declare config_path
+
+bashio::log.info 'Starting code-server...'
+
+resolve_workspace_path() {
+    if bashio::config.has_value 'config_path'; then
+        bashio::config 'config_path'
+        return
+    fi
+    case "$(bashio::config 'workspace_mode')" in
+        homeassistant_config) echo '/config' ;;
+        addon_data) echo '/data/workspace' ;;
+        *) echo '/share/openclaude_workspace' ;;
+    esac
+}
+
+config_path=$(resolve_workspace_path)
+
+options+=(--port 1337)
+options+=(--user-data-dir "/data/vscode")
+options+=(--extensions-dir "/data/vscode/extensions")
+options+=(--host 0.0.0.0)
+options+=(--disable-telemetry)
+options+=(--disable-update-check)
+options+=(--auth none)
+
+export HASS_SERVER="http://supervisor/core"
+export HASS_TOKEN="${SUPERVISOR_TOKEN:-}"
+
+cd "${config_path}" || bashio::exit.nok "Could not change working directory"
+exec code-server "${options[@]}" "${config_path}"

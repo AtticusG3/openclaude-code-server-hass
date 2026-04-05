@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-yaml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Parse addon YAML files
+        run: |
+          python -c "import yaml; yaml.safe_load(open('repository.yaml'))"
+          python -c "import yaml; yaml.safe_load(open('openclaude_code_server/config.yaml'))"
+          python -c "import yaml; yaml.safe_load(open('openclaude_code_server/build.yaml'))"

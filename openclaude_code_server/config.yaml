@@ -1,0 +1,62 @@
+---
+name: OpenClaude Code Server
+version: 1.0.3
+slug: openclaude_code_server
+description: >-
+  Browser-based VS Code (code-server) with OpenClaude and dev tooling baked in at
+  build time. Uses persistent add-on data and /share for projects.
+url: https://github.com/LOCAL/openclaude-code-server-hass
+documentation: https://github.com/LOCAL/openclaude-code-server-hass/blob/main/openclaude_code_server/DOCS.md
+ingress: true
+ingress_port: 1337
+ingress_stream: true
+panel_icon: mdi:robot-outline
+startup: services
+init: false
+arch:
+  - aarch64
+  - amd64
+uart: true
+hassio_api: true
+hassio_role: manager
+homeassistant_api: true
+map:
+  - type: addons
+    read_only: false
+  - type: all_addon_configs
+    read_only: false
+  - type: backup
+    read_only: false
+  - type: homeassistant_config
+    read_only: false
+    path: /config
+  - type: media
+    read_only: false
+  - type: share
+    read_only: false
+  - type: ssl
+    read_only: false
+options:
+  log_level: info
+  workspace_mode: share_openclaude
+  config_path: ""
+  default_provider: ollama
+  ollama_base_url: http://127.0.0.1:11434/v1
+  openrouter_base_url: https://openrouter.ai/api/v1
+  openai_model: qwen2.5-coder:7b
+  openrouter_api_key: ""
+  ollama_api_key: ""
+  git_user_name: ""
+  git_user_email: ""
+schema:
+  log_level: list(trace|debug|info|notice|warning|error|fatal)?
+  workspace_mode: list(share_openclaude|homeassistant_config|addon_data)?
+  config_path: str?
+  default_provider: list(ollama|openrouter)?
+  ollama_base_url: str?
+  openrouter_base_url: str?
+  openai_model: str?
+  openrouter_api_key: password?
+  ollama_api_key: password?
+  git_user_name: str?
+  git_user_email: str?
